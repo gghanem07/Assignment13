@@ -52,6 +52,15 @@ jobs:
           source venv/bin/activate
           playwright install --with-deps chromium
 
+      # START FASTAPI SERVER
+      - name: Start FastAPI app
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/mytestdb
+        run: |
+          source venv/bin/activate
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+
       - name: Run tests
         env:
           DATABASE_URL: postgresql://user:password@localhost:5432/mytestdb
