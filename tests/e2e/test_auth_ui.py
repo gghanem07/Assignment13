@@ -10,17 +10,24 @@ def test_register_success():
 
         page.goto(f"{BASE_URL}/register")
 
-        page.fill("#username", "testuser123")
-        page.fill("#email", "testuser123@example.com")
+        # use unique user to avoid duplicates
+        import random
+        username = f"user{random.randint(1000,9999)}"
+        email = f"{username}@test.com"
+
+        page.fill("#username", username)
+        page.fill("#email", email)
         page.fill("#first_name", "Test")
         page.fill("#last_name", "User")
-        page.fill("#password", "Password123")
-        page.fill("#confirm_password", "Password123")
+        page.fill("#password", "Password123!")
+        page.fill("#confirm_password", "Password123!")
 
         page.click("button[type=submit]")
-        page.wait_for_timeout(2000)
 
-        print(page.content())
+        # wait for redirect to login
+        page.wait_for_url("**/login")
+
+        assert "login" in page.url
 
         browser.close()
 
@@ -33,12 +40,16 @@ def test_login_success():
         page.goto(f"{BASE_URL}/login")
 
         page.fill("#username", "testuser123")
-        page.fill("#password", "Password123")
+        page.fill("#password", "Password123!")
 
         page.click("button[type=submit]")
-        page.wait_for_timeout(2000)
 
-        print(page.content())
+        # wait for redirect to dashboard
+        page.wait_for_url("**/dashboard")
+
+        # verify JWT stored
+        token = page.evaluate("localStorage.getItem('access_token')")
+        assert token is not None
 
         browser.close()
 
@@ -58,6 +69,7 @@ def test_register_short_password():
         page.fill("#confirm_password", "short")
 
         page.click("button[type=submit]")
+
         page.wait_for_timeout(1000)
 
         assert page.locator("#errorAlert").is_visible()
@@ -76,7 +88,8 @@ def test_login_invalid_password():
         page.fill("#password", "wrongpassword")
 
         page.click("button[type=submit]")
-        page.wait_for_timeout(2000)
+
+        page.wait_for_timeout(1000)
 
         assert page.locator("#errorAlert").is_visible()
 
