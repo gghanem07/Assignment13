@@ -47,6 +47,11 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Install Playwright browsers
+        run: |
+          source venv/bin/activate
+          playwright install --with-deps chromium
+
       - name: Run tests
         env:
           DATABASE_URL: postgresql://user:password@localhost:5432/mytestdb
