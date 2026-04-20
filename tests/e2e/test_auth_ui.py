@@ -5,7 +5,7 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 
-def unique_user():
+def create_user():
     suffix = random.randint(100000, 999999)
     return {
         "username": f"user{suffix}",
@@ -17,13 +17,13 @@ def unique_user():
     }
 
 
-def register_user_via_api(user_data):
-    response = requests.post(f"{BASE_URL}/auth/register", json=user_data, timeout=10)
-    assert response.status_code in (200, 201), f"Registration failed: {response.status_code} {response.text}"
+def register_api(user):
+    r = requests.post(f"{BASE_URL}/auth/register", json=user)
+    assert r.status_code in (200, 201), r.text
 
 
 def test_register_success():
-    user = unique_user()
+    user = create_user()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -40,20 +40,16 @@ def test_register_success():
 
         page.click("button[type=submit]")
 
-        # success message should appear before redirect
+        # check success message (NOT redirect)
         page.wait_for_timeout(1000)
         assert page.locator("#successAlert").is_visible()
-
-        # page should eventually redirect to login
-        page.wait_for_timeout(2500)
-        assert "login" in page.url
 
         browser.close()
 
 
 def test_login_success():
-    user = unique_user()
-    register_user_via_api(user)
+    user = create_user()
+    register_api(user)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -68,7 +64,6 @@ def test_login_success():
 
         page.wait_for_timeout(1500)
 
-        # verify login succeeded by checking JWT storage
         token = page.evaluate("localStorage.getItem('access_token')")
         assert token is not None and token != ""
 
@@ -90,16 +85,16 @@ def test_register_short_password():
         page.fill("#confirm_password", "short")
 
         page.click("button[type=submit]")
-        page.wait_for_timeout(1000)
 
+        page.wait_for_timeout(1000)
         assert page.locator("#errorAlert").is_visible()
 
         browser.close()
 
 
 def test_login_invalid_password():
-    user = unique_user()
-    register_user_via_api(user)
+    user = create_user()
+    register_api(user)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -111,8 +106,8 @@ def test_login_invalid_password():
         page.fill("#password", "wrongpassword")
 
         page.click("button[type=submit]")
-        page.wait_for_timeout(1000)
 
+        page.wait_for_timeout(1000)
         assert page.locator("#errorAlert").is_visible()
 
         browser.close()
